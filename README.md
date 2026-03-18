@@ -27,7 +27,7 @@ The main goals of this project were:
 - [R for Data Science](https://r4ds.had.co.nz/)
 - [GitHub Documentation](https://docs.github.com/)
 - [Markdown Guide](https://www.markdownguide.org/)
-- My [stats220 GitHub repo](https://github.com/YOUR_USERNAME/stats220)
+- My [stats220 GitHub repo](https://github.com/summeran719-dot/stats220)
 
 ## Fun Animation
 Here's a cool animated GIF about coding:
