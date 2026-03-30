@@ -17,7 +17,6 @@ body {
   padding: 40px 20px;
 }
 
-
 .report-card {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(12px); 
@@ -60,7 +59,6 @@ img {
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
-
 .dynamic-text {
   font-weight: 700;
   color: #ec4899;
@@ -79,7 +77,6 @@ The data I collected comes from a Google Form tracking my daily video consumptio
 ```{r data-import-and-summary}
 library(tidyverse)
 
-
 csv_url <- "https://docs.google.com/spreadsheets/d/e/2PACX-1vRbOviXondmj168y3_6LPF_RSh00aQlFdERVjgg3t_4knTCD-vK9eObUbdlnKZZXRrv4Ehc9C5Z5K5k/pub?output=csv"
 logged_data <- read_csv(csv_url)
 #logged_data <- read_csv("data.csv")
@@ -95,27 +92,27 @@ latest_data <- logged_data %>%
     quality_rating = 7
   )
 
-# 提取汇总值
+# Extract summary values
 total_obs <- nrow(latest_data)
 avg_duration <- round(mean(latest_data$duration_min, na.rm = TRUE), 1)
 ```
 
 ### Dynamic Summary
 
-So far, I have logged a total of [`r total_obs`]{.dynamic-text} video viewing sessions.
+So far, I have logged a total of <span class="dynamic-text">`r total_obs`</span> video viewing sessions.
 
-The average time I spent per video session is roughly [`r paste(avg_duration)`]{.dynamic-text} minutes. This metric helps me understand if I am leaning towards short-form content or long-form media like films.
+The average time I spent per video session is roughly <span class="dynamic-text">`r paste(avg_duration)`</span> minutes. This metric helps me understand if I am leaning towards short-form content or long-form media like films.
 
 ### Visualizing the Data
 
 ```{r plot-1}
 latest_data %>%
   ggplot(aes(x = video_type, fill = video_type)) +
-  # 增加透明度 (alpha) 和调整柱体宽度 (width) 提升质感
+  # Increase transparency (alpha) and adjust bar width to improve aesthetics
   geom_bar(show.legend = FALSE, alpha = 0.9, width = 0.65) +
-  # 替换为高级感现代配色字典（Tailwind CSS 风格色卡）
+  # Use modern color palette (Tailwind CSS style)
   scale_fill_manual(values = c("#6366f1", "#f43f5e", "#10b981", "#f59e0b", "#8b5cf6", "#3b82f6", "#ec4899", "#94a3b8")) +
-  # 自动将超长标签（如包含逗号的误填项）折叠成多行，防止破坏排版
+  # Automatically wrap long labels across multiple lines to prevent layout disruption
   scale_x_discrete(labels = function(x) stringr::str_wrap(x, width = 12)) +
   labs(
     title = "Observation Count by Video Type", 
@@ -124,10 +121,10 @@ latest_data %>%
   ) +
   theme_minimal() +
   theme(
-    # 增加旋转角度至 45 度，调整对齐方式，修改字体颜色
+    # Rotate labels by 45 degrees, adjust alignment, and change font color
     axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10, color = "#4b5563"),
     axis.text.y = element_text(color = "#4b5563"),
-    # 去除杂乱的竖向网格线，突出数据柱体
+    # Remove vertical grid lines to emphasize the data bars
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
     plot.title = element_text(face = "bold", size = 15, color = "#1f2937", margin = margin(b = 15))
@@ -137,13 +134,70 @@ latest_data %>%
 This first bar chart illustrates the frequency of different video types I watched.
 
 ```{r plot-2}
+# Plot 2: Average watch duration by content type (using geom_col and sorting in descending order)
+latest_data %>%
+  group_by(video_type) %>%
+  summarise(avg_dur = mean(duration_min, na.rm = TRUE)) %>%
+  ggplot(aes(x = reorder(video_type, -avg_dur), y = avg_dur, fill = video_type)) +
+  geom_col(show.legend = FALSE, alpha = 0.85, width = 0.65) +
+  scale_fill_manual(values = c("#f43f5e", "#6366f1", "#8b5cf6", "#10b981", "#f59e0b", "#ec4899", "#3b82f6")) +
+  scale_x_discrete(labels = function(x) stringr::str_wrap(x, width = 12)) +
+  labs(
+    title = "Average Watch Duration by Content Type", 
+    x = "Content Type", 
+    y = "Average Duration (Minutes)"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10, color = "#4b5563"),
+    axis.text.y = element_text(color = "#4b5563"),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold", size = 15, color = "#1f2937", margin = margin(b = 15))
+  )
+```
+
+By calculating the average duration per content type, this second chart provides deeper insight into time allocation. For instance, it highlights which type of media requires the most sustained attention.
+
+```{r plot-top-5}
+# Data preparation: Filter the top 5 longest videos and wrap long titles
+top_5_duration <- latest_data %>%
+  arrange(desc(duration_min)) %>%
+  slice_head(n = 5) %>%
+  # Wrap long video titles automatically to prevent layout compression
+  mutate(video_title_wrapped = stringr::str_wrap(video_title, width = 25))
+
+# Create a horizontal bar chart with thin bars
+ggplot(top_5_duration, aes(x = duration_min, y = reorder(video_title_wrapped, duration_min))) +
+  # Set fill color to match Indigo theme, adjust width for thinner bars
+  geom_col(fill = "#6366f1", alpha = 0.85, width = 0.5) +
+  theme_minimal() +
+  labs(
+    title = "Top 5 Videos by Duration",
+    x = "Watch Duration (Minutes)",
+    y = "Video Title"
+  ) +
+  theme(
+    axis.text.x = element_text(color = "#4b5563"),
+    # Left-align y-axis text and adjust spacing
+    axis.text.y = element_text(color = "#4b5563", hjust = 1, vjust = 0.5, size = 9),
+    # Remove vertical grid lines to emphasize horizontal comparison
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold", size = 15, color = "#1f2937", margin = margin(b = 15))
+  )
+```
+
+Analyzing individual sessions allows me to identify the most time-consuming content in my log. This horizontal bar chart highlights the 5 videos with the longest watch duration.
+
+```{r plot-3}
+# Plot 3: Distribution of audiovisual quality ratings
 latest_data %>%
   ggplot(aes(x = as.factor(quality_rating))) +
-  # 使用与 CSS 主题色呼应的 Indigo 蓝紫色
   geom_bar(fill = "#6366f1", alpha = 0.85, width = 0.5) +
   labs(
     title = "Distribution of Audiovisual Quality Ratings", 
-    x = "Rating (1 = Terrible, 5 = Great)", 
+    x = "Subjective Rating (1 = Terrible, 5 = Great)", 
     y = "Count"
   ) +
   theme_minimal() +
@@ -155,4 +209,6 @@ latest_data %>%
   )
 ```
 
-The second chart displays the distribution of my subjective audiovisual quality ratings across all logged sessions.
+Finally, the third chart displays the distribution of my subjective audiovisual quality ratings across all logged sessions.
+
+</div>
