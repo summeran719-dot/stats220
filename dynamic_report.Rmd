@@ -1,0 +1,158 @@
+---
+title: My dynamic report
+output: html_fragment
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, message=FALSE, warning=FALSE, error=FALSE)
+```
+
+```{css}
+body {
+  background: linear-gradient(135deg, #eef2ff 0%, #fdf2f8 100%);
+  background-attachment: fixed; 
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #1f2937;
+  margin: 0;
+  padding: 40px 20px;
+}
+
+
+.report-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px); 
+  margin: 0 auto;            
+  padding: 40px;
+  border-radius: 24px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08); 
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  transition: transform 0.3s ease;
+  max-width: 800px;
+}
+
+.report-card:hover {
+  transform: translateY(-5px); 
+}
+
+h2 {
+  font-size: 1.8em;
+  font-weight: 700;
+  background: linear-gradient(90deg, #6366f1, #f43f5e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-top: 0; 
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  padding-bottom: 10px;
+}
+
+h3 {
+  color: #6366f1;
+  font-weight: 600;
+  margin-top: 30px;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  margin: 20px 0;
+  display: block;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+
+.dynamic-text {
+  font-weight: 700;
+  color: #ec4899;
+  background: rgba(236, 72, 153, 0.1);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+```
+
+<div class="report-card">
+
+## Observational Logging of Video Consumption
+
+The data I collected comes from a Google Form tracking my daily video consumption habits. It includes information about the type of videos I watch, the duration, the devices I use, and my subjective rating of the audiovisual quality.
+
+```{r data-import-and-summary}
+library(tidyverse)
+
+
+csv_url <- "https://docs.google.com/spreadsheets/d/e/2PACX-1vRbOviXondmj168y3_6LPF_RSh00aQlFdERVjgg3t_4knTCD-vK9eObUbdlnKZZXRrv4Ehc9C5Z5K5k/pub?output=csv"
+logged_data <- read_csv(csv_url)
+#logged_data <- read_csv("data.csv")
+
+latest_data <- logged_data %>%
+  rename(
+    timestamp = 1,
+    video_type = 2,
+    video_title = 3,
+    duration_min = 4,
+    device = 5,
+    focus_level = 6,
+    quality_rating = 7
+  )
+
+# 提取汇总值
+total_obs <- nrow(latest_data)
+avg_duration <- round(mean(latest_data$duration_min, na.rm = TRUE), 1)
+```
+
+### Dynamic Summary
+
+So far, I have logged a total of [`r total_obs`]{.dynamic-text} video viewing sessions.
+
+The average time I spent per video session is roughly [`r paste(avg_duration)`]{.dynamic-text} minutes. This metric helps me understand if I am leaning towards short-form content or long-form media like films.
+
+### Visualizing the Data
+
+```{r plot-1}
+latest_data %>%
+  ggplot(aes(x = video_type, fill = video_type)) +
+  # 增加透明度 (alpha) 和调整柱体宽度 (width) 提升质感
+  geom_bar(show.legend = FALSE, alpha = 0.9, width = 0.65) +
+  # 替换为高级感现代配色字典（Tailwind CSS 风格色卡）
+  scale_fill_manual(values = c("#6366f1", "#f43f5e", "#10b981", "#f59e0b", "#8b5cf6", "#3b82f6", "#ec4899", "#94a3b8")) +
+  # 自动将超长标签（如包含逗号的误填项）折叠成多行，防止破坏排版
+  scale_x_discrete(labels = function(x) stringr::str_wrap(x, width = 12)) +
+  labs(
+    title = "Observation Count by Video Type", 
+    x = "Content Type", 
+    y = "Count"
+  ) +
+  theme_minimal() +
+  theme(
+    # 增加旋转角度至 45 度，调整对齐方式，修改字体颜色
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10, color = "#4b5563"),
+    axis.text.y = element_text(color = "#4b5563"),
+    # 去除杂乱的竖向网格线，突出数据柱体
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold", size = 15, color = "#1f2937", margin = margin(b = 15))
+  )
+```
+
+This first bar chart illustrates the frequency of different video types I watched.
+
+```{r plot-2}
+latest_data %>%
+  ggplot(aes(x = as.factor(quality_rating))) +
+  # 使用与 CSS 主题色呼应的 Indigo 蓝紫色
+  geom_bar(fill = "#6366f1", alpha = 0.85, width = 0.5) +
+  labs(
+    title = "Distribution of Audiovisual Quality Ratings", 
+    x = "Rating (1 = Terrible, 5 = Great)", 
+    y = "Count"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text = element_text(color = "#4b5563"),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold", size = 15, color = "#1f2937", margin = margin(b = 15))
+  )
+```
+
+The second chart displays the distribution of my subjective audiovisual quality ratings across all logged sessions.
